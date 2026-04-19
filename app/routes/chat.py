@@ -97,5 +97,29 @@ def handle_message(data):
         'sender_id': cu.id,
         'sender_username': cu.username,
         'content': content,
+        'is_bot': False,
         'created_at': msg.created_at.strftime('%H:%M'),
     }, room=str(room_id))
+
+    # Автоответчик — срабатывает если получатель продавец с включённым ботом
+    other = chat_room.other_participant(cu.id)
+    if (other.auto_reply_enabled and other.auto_reply_text.strip()
+            and other.is_seller):
+        bot_text = other.auto_reply_text.strip()
+        bot_msg = Message(
+            room_id=room_id,
+            sender_id=other.id,
+            content=bot_text,
+            is_bot=True,
+        )
+        db.session.add(bot_msg)
+        db.session.commit()
+
+        emit('receive_message', {
+            'id': bot_msg.id,
+            'sender_id': other.id,
+            'sender_username': other.username,
+            'content': bot_text,
+            'is_bot': True,
+            'created_at': bot_msg.created_at.strftime('%H:%M'),
+        }, room=str(room_id))

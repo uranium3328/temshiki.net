@@ -44,7 +44,8 @@ socket.on('receive_message', function (data) {
     row.className = 'message-row ' + (isOwn ? 'own' : 'other');
 
     row.innerHTML = `
-        <div class="message-bubble">
+        <div class="message-bubble ${data.is_bot ? 'is-bot' : ''}">
+            ${data.is_bot ? '<div class="bot-badge"><i class="bi bi-robot"></i> Автоответ</div>' : ''}
             <div class="message-content">${escapeHtml(data.content)}</div>
             <div class="message-time">${data.created_at}</div>
         </div>

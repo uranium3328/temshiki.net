@@ -43,6 +43,9 @@ def edit():
         current_user.payment_card = request.form.get('payment_card', '').strip()
         current_user.payment_bank = request.form.get('payment_bank', '').strip()
         current_user.payment_comment = request.form.get('payment_comment', '').strip()
+        # Автоответчик
+        current_user.auto_reply_enabled = bool(request.form.get('auto_reply_enabled'))
+        current_user.auto_reply_text = request.form.get('auto_reply_text', '').strip()
 
         file = request.files.get('avatar')
         if file and file.filename and allowed_file(file.filename):

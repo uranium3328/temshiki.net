@@ -500,6 +500,17 @@ main { flex: 1; }
     border: 1px solid transparent;
 }
 
+/* ── Автоответчик ── */
+.bot-badge {
+    font-size: 0.65rem;
+    color: var(--violet-light);
+    margin-bottom: 4px;
+    opacity: 0.8;
+}
+.message-bubble.is-bot {
+    border: 1px solid rgba(139,92,246,0.3);
+}
+
 /* ── Реквизиты ── */
 .requisite-block {
     background: var(--bg-card2);

@@ -22,6 +22,9 @@ class User(db.Model, UserMixin):
     payment_comment = db.Column(db.String(200), default='')  # доп. инструкция
     balance = db.Column(db.Float, default=0.0)
     is_active = db.Column(db.Boolean, default=True)
+    # Автоответчик
+    auto_reply_enabled = db.Column(db.Boolean, default=False)
+    auto_reply_text = db.Column(db.Text, default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     listings = db.relationship('Listing', backref='seller', lazy=True,
@@ -175,6 +178,7 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     is_read = db.Column(db.Boolean, default=False)
+    is_bot = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     sender = db.relationship('User', backref='sent_messages')
