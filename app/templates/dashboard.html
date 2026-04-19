@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block title %}Дашборд{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold mb-0">Дашборд</h2>
+    {% if current_user.is_seller %}
+    <a href="{{ url_for('listings.create') }}" class="btn btn-violet">
+        <i class="bi bi-plus-lg me-2"></i>Новое объявление
+    </a>
+    {% endif %}
+</div>
+
+<!-- Карточки статистики -->
+<div class="row g-4 mb-5">
+    {% if current_user.is_seller %}
+    <div class="col-md-3">
+        <div class="stat-widget p-4">
+            <div class="stat-widget-icon text-violet"><i class="bi bi-wallet2"></i></div>
+            <div class="stat-widget-value">{{ "%.2f" | format(current_user.balance) }} ₽</div>
+            <div class="stat-widget-label">Баланс</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-widget p-4">
+            <div class="stat-widget-icon text-success"><i class="bi bi-graph-up"></i></div>
+            <div class="stat-widget-value">{{ "%.0f" | format(income) }} ₽</div>
+            <div class="stat-widget-label">Заработано</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-widget p-4">
+            <div class="stat-widget-icon text-info"><i class="bi bi-card-list"></i></div>
+            <div class="stat-widget-value">{{ listings | length }}</div>
+            <div class="stat-widget-label">Объявлений</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-widget p-4">
+            <div class="stat-widget-icon text-warning"><i class="bi bi-chat-dots"></i></div>
+            <div class="stat-widget-value">{{ unread_chats }}</div>
+            <div class="stat-widget-label">Непрочитанных</div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-md-4">
+        <div class="stat-widget p-4">
+            <div class="stat-widget-icon text-violet"><i class="bi bi-bag-check"></i></div>
+            <div class="stat-widget-value">{{ orders | length }}</div>
+            <div class="stat-widget-label">Заказов</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-widget p-4">
+            <div class="stat-widget-icon text-success"><i class="bi bi-check-circle"></i></div>
+            <div class="stat-widget-value">{{ orders | selectattr('status', 'eq', 'completed') | list | length }}</div>
+            <div class="stat-widget-label">Завершено</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-widget p-4">
+            <div class="stat-widget-icon text-warning"><i class="bi bi-chat-dots"></i></div>
+            <div class="stat-widget-value">{{ unread_chats }}</div>
+            <div class="stat-widget-label">Непрочитанных</div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-4">
+    <!-- Последние заказы -->
+    <div class="{{ 'col-lg-7' if current_user.is_seller else 'col-12' }}">
+        <div class="dash-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-semibold mb-0">
+                    {% if current_user.is_seller %}Входящие заказы{% else %}Мои заказы{% endif %}
+                </h5>
+                <a href="{{ url_for('orders.list_orders') }}" class="btn btn-sm btn-outline-violet">Все заказы</a>
+            </div>
+            {% if orders %}
+            <div class="d-flex flex-column gap-2">
+                {% for order in orders %}
+                <a href="{{ url_for('orders.detail', order_id=order.id) }}"
+                   class="order-row d-flex align-items-center justify-content-between p-3 rounded-2 text-decoration-none">
+                    <div>
+                        <div class="fw-semibold text-light">{{ order.listing.title[:45] }}{% if order.listing.title|length > 45 %}…{% endif %}</div>
+                        <div class="text-muted small">
+                            {% if current_user.is_seller %}{{ order.buyer.username }}{% else %}{{ order.seller_user.username }}{% endif %}
+                            · {{ order.created_at.strftime('%d.%m.%Y') }}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-semibold">{{ order.amount | int }} ₽</span>
+                        {% set label, color = order.STATUS_LABELS.get(order.status, ('?', 'secondary')) %}
+                        <span class="badge bg-{{ color }}-subtle text-{{ color }} border border-{{ color }}-subtle">
+                            {{ label }}
+                        </span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0">Заказов пока нет</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Объявления (только для продавца) -->
+    {% if current_user.is_seller %}
+    <div class="col-lg-5">
+        <div class="dash-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-semibold mb-0">Мои объявления</h5>
+                <a href="{{ url_for('listings.create') }}" class="btn btn-sm btn-violet">
+                    <i class="bi bi-plus"></i> Добавить
+                </a>
+            </div>
+            {% if listings %}
+            <div class="d-flex flex-column gap-2">
+                {% for listing in listings %}
+                <div class="d-flex align-items-center justify-content-between p-2 rounded-2 listing-row">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if listing.image %}
+                        <img src="{{ url_for('static', filename=listing.image) }}"
+                             width="40" height="40" class="rounded-2" style="object-fit:cover;">
+                        {% else %}
+                        <div class="avatar-placeholder-sm">{{ listing.title[0] }}</div>
+                        {% endif %}
+                        <div>
+                            <div class="fw-semibold text-light small">{{ listing.title[:35] }}{% if listing.title|length > 35 %}…{% endif %}</div>
+                            <div class="text-muted" style="font-size:0.75rem;">{{ listing.price | int }} ₽ · {{ listing.views }} просмотров</div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-1">
+                        <a href="{{ url_for('listings.detail', listing_id=listing.id) }}"
+                           class="btn btn-sm btn-outline-secondary" title="Просмотр">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('listings.edit', listing_id=listing.id) }}"
+                           class="btn btn-sm btn-outline-violet" title="Редактировать">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-3 mb-0">Объявлений пока нет</p>
+            {% endif %}
+        </div>
+
+        <!-- Вывод средств -->
+        {% if current_user.balance > 0 %}
+        <div class="dash-card p-4 mt-4">
+            <h5 class="fw-semibold mb-3">Вывод средств</h5>
+            <div class="mb-3 p-3 rounded-2 bg-success-subtle text-success fw-bold fs-5">
+                {{ "%.2f" | format(current_user.balance) }} ₽
+            </div>
+            <form method="post" action="{{ url_for('profile.withdraw') }}">
+                <div class="mb-2">
+                    <input type="number" name="amount" class="form-control" step="0.01"
+                           min="1" max="{{ current_user.balance }}" placeholder="Сумма"
+                           value="{{ current_user.balance | round(2) }}">
+                </div>
+                <div class="mb-2">
+                    <textarea name="details" class="form-control" rows="2"
+                              placeholder="Реквизиты (номер карты, кошелёк...)" required></textarea>
+                </div>
+                <button class="btn btn-success w-100" type="submit">Вывести</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

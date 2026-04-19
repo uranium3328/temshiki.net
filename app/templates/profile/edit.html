@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Настройки профиля{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <h2 class="fw-bold mb-4">Настройки профиля</h2>
+        <div class="auth-card p-4 p-md-5">
+            <form method="post" enctype="multipart/form-data">
+                <div class="text-center mb-4">
+                    {% if current_user.avatar %}
+                        <img src="{{ url_for('static', filename=current_user.avatar) }}"
+                             class="rounded-circle mb-3" width="80" height="80" style="object-fit:cover;">
+                    {% else %}
+                        <div class="avatar-placeholder mx-auto mb-3" style="width:80px;height:80px;font-size:2rem;">
+                            {{ current_user.username[0].upper() }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <label class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-camera me-1"></i>Сменить фото
+                            <input type="file" name="avatar" class="d-none" accept="image/*">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Имя пользователя</label>
+                    <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email</label>
+                    <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">О себе</label>
+                    <textarea name="bio" class="form-control" rows="3"
+                              placeholder="Расскажи о своих услугах...">{{ current_user.bio }}</textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Telegram</label>
+                    <div class="input-group">
+                        <span class="input-group-text">@</span>
+                        <input type="text" name="telegram" class="form-control"
+                               value="{{ current_user.telegram | replace('@','') }}"
+                               placeholder="username">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Роль</label>
+                    <div class="role-select-grid">
+                        <label class="role-option">
+                            <input type="radio" name="role" value="buyer"
+                                   {{ 'checked' if current_user.role == 'buyer' }}>
+                            <div class="role-card">
+                                <div class="fw-semibold">Покупатель</div>
+                            </div>
+                        </label>
+                        <label class="role-option">
+                            <input type="radio" name="role" value="seller"
+                                   {{ 'checked' if current_user.role == 'seller' }}>
+                            <div class="role-card">
+                                <div class="fw-semibold">Продавец</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                {% if current_user.role == 'seller' or request.form.get('role') == 'seller' %}
+                <hr class="border-secondary my-4">
+                <h6 class="fw-semibold mb-3">
+                    <i class="bi bi-credit-card me-2 text-violet"></i>Реквизиты для получения оплаты
+                </h6>
+                <p class="text-muted small mb-3">
+                    Покупатель увидит эти данные на странице оплаты и переведёт деньги напрямую тебе.
+                </p>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Телефон / СБП</label>
+                        <input type="text" name="payment_phone" class="form-control"
+                               value="{{ current_user.payment_phone }}"
+                               placeholder="+7 900 000 00 00">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Банк</label>
+                        <select name="payment_bank" class="form-select">
+                            <option value="">— выбери банк —</option>
+                            {% for b in ['Сбербанк', 'Тинькофф (Т-Банк)', 'ВТБ', 'Альфа-Банк', 'Райффайзен', 'Озон Банк', 'Другой'] %}
+                            <option value="{{ b }}" {{ 'selected' if current_user.payment_bank == b }}>{{ b }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Номер карты</label>
+                        <input type="text" name="payment_card" class="form-control"
+                               value="{{ current_user.payment_card }}"
+                               placeholder="0000 0000 0000 0000" maxlength="19">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Комментарий для покупателя</label>
+                        <input type="text" name="payment_comment" class="form-control"
+                               value="{{ current_user.payment_comment }}"
+                               placeholder="Например: переводи на СБП по номеру телефона">
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="d-flex gap-3">
+                    <button type="submit" class="btn btn-violet px-5">Сохранить</button>
+                    <a href="{{ url_for('profile.view', username=current_user.username) }}"
+                       class="btn btn-outline-secondary">Отмена</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

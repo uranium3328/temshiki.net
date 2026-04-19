@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}{{ listing.title }}{% endblock %}
+
+{% block content %}
+<div class="row g-5">
+    <!-- Основная инфо -->
+    <div class="col-lg-8">
+        {% if listing.image %}
+            <img src="{{ url_for('static', filename=listing.image) }}"
+                 class="img-fluid rounded-3 mb-4 w-100" style="max-height:400px;object-fit:cover;"
+                 alt="{{ listing.title }}">
+        {% endif %}
+
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge badge-type fs-6">
+                {% if listing.listing_type == 'guide' %}Гайд{% else %}Услуга{% endif %}
+            </span>
+            {% for slug, label in listing.CATEGORIES %}
+                {% if slug == listing.category %}
+                <span class="badge bg-secondary">{{ label }}</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <h1 class="fw-bold mb-3">{{ listing.title }}</h1>
+
+        <div class="d-flex align-items-center gap-3 mb-4 text-muted small">
+            <span><i class="bi bi-eye"></i> {{ listing.views }} просмотров</span>
+            <span><i class="bi bi-bag-check"></i> {{ listing.sales_count }} продаж</span>
+            {% if listing.delivery_time %}
+            <span><i class="bi bi-clock"></i> {{ listing.delivery_time }}</span>
+            {% endif %}
+        </div>
+
+        <div class="detail-description p-4 rounded-3 mb-4">
+            <h5 class="fw-semibold mb-3">Описание</h5>
+            <div class="text-body" style="white-space: pre-wrap;">{{ listing.description }}</div>
+        </div>
+
+        {% if current_user.is_authenticated and current_user.id == listing.seller_id %}
+        <div class="d-flex gap-2 mb-4">
+            <a href="{{ url_for('listings.edit', listing_id=listing.id) }}"
+               class="btn btn-outline-violet">
+                <i class="bi bi-pencil"></i> Редактировать
+            </a>
+            <form method="post" action="{{ url_for('listings.delete', listing_id=listing.id) }}"
+                  onsubmit="return confirm('Удалить объявление?')">
+                <button class="btn btn-outline-danger">
+                    <i class="bi bi-trash"></i> Удалить
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Отзывы -->
+        <div id="reviews">
+            <h4 class="fw-bold mb-4">
+                Отзывы
+                {% if listing.avg_rating > 0 %}
+                <span class="text-warning ms-2">
+                    <i class="bi bi-star-fill"></i> {{ listing.avg_rating }}
+                </span>
+                <span class="text-muted fs-6">({{ reviews | length }})</span>
+                {% endif %}
+            </h4>
+
+            {% if reviews %}
+            <div class="d-flex flex-column gap-3">
+                {% for review in reviews %}
+                <div class="review-card p-4 rounded-3">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="avatar-placeholder-sm">{{ review.reviewer.username[0].upper() }}</div>
+                        <div>
+                            <div class="fw-semibold">{{ review.reviewer.username }}</div>
+                            <div class="stars">
+                                {% for i in range(1, 6) %}
+                                    <i class="bi bi-star{{ '-fill' if i <= review.rating else '' }} text-warning"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="ms-auto text-muted small">{{ review.created_at.strftime('%d.%m.%Y') }}</div>
+                    </div>
+                    {% if review.comment %}
+                    <p class="mb-0 text-muted">{{ review.comment }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">Отзывов пока нет. Будь первым!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Боковая панель покупки -->
+    <div class="col-lg-4">
+        <div class="buy-sidebar p-4 sticky-top" style="top:80px;">
+            <div class="price-display mb-4">{{ listing.price | int }} ₽</div>
+
+            {% if current_user.is_authenticated %}
+                {% if current_user.id != listing.seller_id %}
+                <a href="{{ url_for('payments.create_payment', listing_id=listing.id) }}"
+                   class="btn btn-violet w-100 btn-lg mb-3">
+                    <i class="bi bi-bag me-2"></i>Купить
+                </a>
+                <a href="{{ url_for('chat.start_chat', user_id=listing.seller_id) }}"
+                   class="btn btn-outline-light w-100 mb-3">
+                    <i class="bi bi-chat me-2"></i>Написать продавцу
+                </a>
+                {% else %}
+                <div class="alert alert-secondary text-center">Это ваше объявление</div>
+                {% endif %}
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-violet w-100 btn-lg mb-3">
+                <i class="bi bi-bag me-2"></i>Купить
+            </a>
+            {% endif %}
+
+            <div class="seller-info-block p-3 rounded-3 mt-3">
+                <h6 class="fw-semibold mb-3">Продавец</h6>
+                <div class="d-flex align-items-center gap-3">
+                    {% if listing.seller.avatar %}
+                        <img src="{{ url_for('static', filename=listing.seller.avatar) }}"
+                             class="rounded-circle" width="48" height="48" style="object-fit:cover;">
+                    {% else %}
+                        <div class="avatar-placeholder">{{ listing.seller.username[0].upper() }}</div>
+                    {% endif %}
+                    <div>
+                        <a href="{{ url_for('profile.view', username=listing.seller.username) }}"
+                           class="fw-semibold text-decoration-none">
+                            {{ listing.seller.username }}
+                        </a>
+                        <div class="text-muted small">
+                            {% if listing.seller.avg_rating > 0 %}
+                            <i class="bi bi-star-fill text-warning"></i>
+                            {{ listing.seller.avg_rating }} ({{ listing.seller.reviews_count }})
+                            {% else %}
+                            Новый продавец
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if listing.seller.bio %}
+                <p class="text-muted small mt-2 mb-0">{{ listing.seller.bio[:100] }}</p>
+                {% endif %}
+            </div>
+
+            <div class="mt-3 text-muted small">
+                <i class="bi bi-shield-check text-success me-1"></i> Безопасная оплата ЮKassa<br>
+                <i class="bi bi-arrow-counterclockwise text-info me-1 mt-1"></i> Защита покупателя
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

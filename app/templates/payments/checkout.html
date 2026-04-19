@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Оформление заказа{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <h2 class="fw-bold mb-4">Оформление заказа</h2>
+        <div class="auth-card p-4 p-md-5">
+            <!-- Инфо о товаре -->
+            <div class="d-flex gap-3 mb-4 p-3 rounded-3" style="background:#1a1a2e;">
+                {% if listing.image %}
+                    <img src="{{ url_for('static', filename=listing.image) }}"
+                         width="64" height="64" class="rounded-2 flex-shrink-0" style="object-fit:cover;">
+                {% else %}
+                    <div class="avatar-placeholder flex-shrink-0">{{ listing.title[0] }}</div>
+                {% endif %}
+                <div>
+                    <div class="fw-semibold">{{ listing.title }}</div>
+                    <div class="text-muted small">
+                        от <a href="{{ url_for('profile.view', username=listing.seller.username) }}"
+                              class="link-violet">{{ listing.seller.username }}</a>
+                    </div>
+                </div>
+                <div class="ms-auto fw-bold fs-5 text-violet flex-shrink-0">{{ listing.price | int }} ₽</div>
+            </div>
+
+            <form method="post" action="{{ url_for('payments.create_payment', listing_id=listing.id) }}">
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Комментарий для продавца</label>
+                    <textarea name="comment" class="form-control" rows="3"
+                              placeholder="Уточни детали заказа, пожелания..."></textarea>
+                </div>
+
+                <div class="p-3 rounded-3 mb-4" style="background:#0d1117;border:1px solid #30363d;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Стоимость</span>
+                        <span>{{ listing.price | int }} ₽</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Комиссия сервиса</span>
+                        <span class="text-muted">включена</span>
+                    </div>
+                    <hr class="border-secondary">
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Итого</span>
+                        <span class="text-violet">{{ listing.price | int }} ₽</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2 mb-4 text-muted small">
+                    <i class="bi bi-shield-check text-success"></i>
+                    Безопасная оплата через ЮKassa. Деньги поступят продавцу только после подтверждения выполнения.
+                </div>
+
+                <button type="submit" class="btn btn-violet w-100 btn-lg">
+                    <i class="bi bi-credit-card me-2"></i>Оплатить {{ listing.price | int }} ₽
+                </button>
+                <a href="{{ url_for('listings.detail', listing_id=listing.id) }}"
+                   class="btn btn-outline-secondary w-100 mt-2">Отмена</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

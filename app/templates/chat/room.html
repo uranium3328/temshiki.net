@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Чат с {{ other.username }}{% endblock %}
+
+{% block content %}
+<div class="chat-wrapper">
+    <!-- Шапка чата -->
+    <div class="chat-header p-3 d-flex align-items-center gap-3">
+        <a href="{{ url_for('chat.list_rooms') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        {% if other.avatar %}
+            <img src="{{ url_for('static', filename=other.avatar) }}"
+                 class="rounded-circle" width="40" height="40" style="object-fit:cover;">
+        {% else %}
+            <div class="avatar-placeholder-sm">{{ other.username[0].upper() }}</div>
+        {% endif %}
+        <div>
+            <a href="{{ url_for('profile.view', username=other.username) }}"
+               class="fw-semibold text-decoration-none text-light">
+                {{ other.username }}
+            </a>
+            {% if other.is_seller %}
+            <div class="text-muted" style="font-size:0.75rem;">Продавец</div>
+            {% endif %}
+        </div>
+        {% if room.order %}
+        <a href="{{ url_for('orders.detail', order_id=room.order.id) }}"
+           class="btn btn-sm btn-outline-violet ms-auto">
+            <i class="bi bi-bag me-1"></i>Заказ #{{ room.order.id }}
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Сообщения -->
+    <div class="chat-messages p-4" id="chat-messages">
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="message-row {{ 'own' if msg.sender_id == current_user.id else 'other' }}">
+                <div class="message-bubble">
+                    <div class="message-content">{{ msg.content }}</div>
+                    <div class="message-time">{{ msg.created_at.strftime('%H:%M') }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-chat-dots fs-1 mb-3 d-block opacity-25"></i>
+            Начни разговор!
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Ввод сообщения -->
+    <div class="chat-input-area p-3">
+        <form id="message-form" class="d-flex gap-2">
+            <input type="text" id="message-input" class="form-control"
+                   placeholder="Написать сообщение..." autocomplete="off" maxlength="2000">
+            <button type="submit" class="btn btn-violet px-4">
+                <i class="bi bi-send"></i>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<script>
+    const ROOM_ID = {{ room.id }};
+    const CURRENT_USER_ID = {{ current_user.id }};
+    const CURRENT_USERNAME = "{{ current_user.username }}";
+</script>
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

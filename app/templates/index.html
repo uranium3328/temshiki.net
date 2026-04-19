@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<div class="hero-section text-center py-5 mb-5">
+    <div class="hero-glow"></div>
+    <h1 class="display-5 fw-bold mb-3">
+        Темщики.net — маркетплейс услуг и гайдов
+    </h1>
+    <p class="lead text-muted mb-4">
+        Покупай и продавай услуги, гайды и знания.<br>
+        Аплата через чат, самые не безопасные сделки крч я напиздел по поводу бизопасности.<br>
+        А может и безопасно хер его знает
+    </p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="{{ url_for('listings.catalog') }}" class="btn btn-violet btn-lg px-4">
+            <i class="bi bi-grid-3x3-gap me-2"></i>Смотреть каталог
+        </a>
+        {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg px-4">
+            Стать продавцом
+        </a>
+        {% else %}
+        <a href="{{ url_for('listings.create') }}" class="btn btn-outline-light btn-lg px-4">
+            <i class="bi bi-plus-circle me-2"></i>Разместить объявление
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Статистика -->
+<div class="row g-4 mb-5 text-center">
+    <div class="col-md-4">
+        <div class="stat-card p-4">
+            <div class="stat-number">{{ total_listings }}+</div>
+            <div class="stat-label">Объявлений</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card p-4">
+            <div class="stat-number">{{ total_sellers }}+</div>
+            <div class="stat-label">Продавцов с самыми лучшими мамами</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card p-4">
+            <div class="stat-number">{{ total_orders }}+</div>
+            <div class="stat-label">Выполненных заказов</div>
+        </div>
+    </div>
+</div>
+
+<!-- Категории -->
+<h3 class="fw-bold mb-4">Категории</h3>
+<div class="row g-3 mb-5">
+    {% set cats = [
+        ('earning','Заработок','bg-warning-subtle'),
+        ('gaming','Игры','bg-success-subtle'),
+        ('tech','Технические услуги','bg-info-subtle'),
+        ('guides','Гайды и обучение','bg-primary-subtle'),
+        ('promo','Продвижение','bg-danger-subtle'),
+        ('scripts','Скрипты и боты','bg-secondary-subtle'),
+        ('other','Другое','bg-dark'),
+    ] %}
+    {% for slug, name, bg in cats %}
+    <div class="col-6 col-md-3">
+        <a href="{{ url_for('listings.catalog', category=slug) }}"
+           class="category-card {{ bg }} d-flex align-items-center gap-3 p-3 rounded-3 text-decoration-none">
+            <span class="fw-semibold">{{ name }}</span>
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Популярные объявления -->
+{% if featured %}
+<h3 class="fw-bold mb-4">Популярные объявления</h3>
+<div class="row g-4 mb-5">
+    {% for listing in featured %}
+    <div class="col-md-3">
+        <div class="listing-card h-100">
+            <a href="{{ url_for('listings.detail', listing_id=listing.id) }}" class="text-decoration-none">
+                {% if listing.image %}
+                    <img src="{{ url_for('static', filename=listing.image) }}"
+                         class="listing-card-img" alt="{{ listing.title }}">
+                {% else %}
+                    <div class="listing-card-img-placeholder">
+                        <span>{{ listing.title[0] }}</span>
+                    </div>
+                {% endif %}
+                <div class="listing-card-body p-3">
+                    <span class="badge badge-type mb-2">
+                        {% if listing.listing_type == 'guide' %}Гайд{% else %}Услуга{% endif %}
+                    </span>
+                    <h6 class="listing-title">{{ listing.title }}</h6>
+                    <p class="listing-desc text-muted small">{{ listing.description[:80] }}...</p>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="listing-price">{{ listing.price | int }} ₽</span>
+                        {% if listing.avg_rating > 0 %}
+                        <span class="text-warning small">
+                            <i class="bi bi-star-fill"></i> {{ listing.avg_rating }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Как это работает -->
+<h3 class="fw-bold mb-4 text-center">Как это работает</h3>
+<div class="row g-4 mb-5">
+    <div class="col-md-4 text-center">
+        <div class="how-step p-4">
+            <h5 class="fw-semibold">1. Найди нужное</h5>
+            <p class="text-muted small">Просматривай каталог, фильтруй по категориям и цене.</p>
+        </div>
+    </div>
+    <div class="col-md-4 text-center">
+        <div class="how-step p-4">
+            <h5 class="fw-semibold">2. Оплати безопасно</h5>
+            <p class="text-muted small">Оплата через договор в чате. Деньги поступают продавцу только после выполнения.</p>
+        </div>
+    </div>
+    <div class="col-md-4 text-center">
+        <div class="how-step p-4">
+            <h5 class="fw-semibold">3. Получи результат</h5>
+            <p class="text-muted small">Общайся с продавцом в чате, получи услугу и оставь отзыв.</p>
+        </div>
+    </div>
+   <div class="col-md-4 text-center">
+        <div class="how-step p-4">
+            <h5 class="fw-semibold">4...</h5>
+            <p class="text-muted small">Плати мне быстро! https://www.donationalerts.com/r/uranium_3328 </p>
+        </div>
+    </div>
+{% endblock %}
