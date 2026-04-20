@@ -4,7 +4,9 @@
       "Bash(del \"C:\\\\Users\\\\ytdan\\\\OneDrive\\\\Документы\\\\proj\\\\саит\\\\instance\\\\marketplace.db\")",
       "Bash(del \"C:\\\\Users\\\\ytdan\\\\OneDrive\\\\Документы\\\\proj\\\\саит\\\\marketplace.db\")",
       "Bash(python3 -c ':*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(python -c \"from flask_mail import Mail; print\\('Flask-Mail OK'\\)\")",
+      "Bash(del \"C:\\\\Users\\\\ytdan\\\\OneDrive\\\\Документы\\\\proj\\\\саит\\\\app\\\\templates\\\\auth\\\\reset_password.html\")"
     ]
   }
 }

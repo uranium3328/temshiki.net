@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+import random
+from datetime import datetime, timedelta
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session
 from flask_login import login_user, logout_user, login_required, current_user
-from flask_mail import Message
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
-from .. import db, mail
+from .. import db
 from ..models import User
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -87,9 +87,7 @@ def logout():
     return redirect(url_for('main.index'))
 
 
-def _get_serializer():
-    return URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
-
+# ── Сброс пароля через код ──────────────────────────────────────────────────
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -100,67 +98,98 @@ def forgot_password():
         email = request.form.get('email', '').strip().lower()
         user = User.query.filter_by(email=email).first()
 
-        # Всегда показываем одно сообщение — чтобы не светить, есть ли такой email
-        flash('Если такой email зарегистрирован, письмо со ссылкой уже отправлено.', 'info')
+        if not user:
+            flash('Пользователь с таким email не найден.', 'danger')
+            return render_template('auth/forgot_password.html')
 
-        if user:
-            token = _get_serializer().dumps(email, salt='password-reset')
-            reset_url = url_for('auth.reset_password', token=token, _external=True)
+        # Генерируем 6-значный код
+        code = str(random.randint(100000, 999999))
+        session['reset_email']   = email
+        session['reset_code']    = code
+        session['reset_expires'] = (datetime.utcnow() + timedelta(minutes=10)).isoformat()
 
-            try:
-                msg = Message(
-                    subject='Сброс пароля — Темщики.net',
-                    recipients=[email],
-                    html=f'''
-<p>Привет, {user.username}!</p>
-<p>Ты запросил сброс пароля на <strong>Темщики.net</strong>.</p>
-<p><a href="{reset_url}" style="color:#8b5cf6">Нажми здесь чтобы сбросить пароль</a></p>
-<p>Ссылка действительна 1 час. Если ты не запрашивал сброс — просто игнорируй это письмо.</p>
-<hr>
-<small>Темщики.net</small>
+        # Если MAIL_USERNAME не задан — используем email пользователя как отправителя
+        sender = current_app.config.get('MAIL_USERNAME') or email
+
+        try:
+            from flask_mail import Message
+            from .. import mail
+            msg = Message(
+                subject='Код сброса пароля — Темщики.net',
+                sender=sender,
+                recipients=[email],
+                html=f'''
+<div style="font-family:sans-serif;max-width:420px">
+  <h2 style="color:#8b5cf6">Темщики.net</h2>
+  <p>Привет, <b>{user.username}</b>!</p>
+  <p>Твой код для сброса пароля:</p>
+  <div style="font-size:2.5rem;font-weight:bold;letter-spacing:8px;color:#8b5cf6;margin:16px 0">
+    {code}
+  </div>
+  <p>Код действителен <b>10 минут</b>.<br>
+  Если ты ничего не запрашивал — просто игнорируй это письмо.</p>
+</div>
 ''',
-                )
-                mail.send(msg)
-            except Exception:
-                # Если почта не настроена — просто логируем, не ломаем сайт
-                current_app.logger.warning('Не удалось отправить письмо сброса пароля.')
+            )
+            mail.send(msg)
+            flash('Код отправлен на твой email. Проверь папку "Спам" если не видишь.', 'success')
+        except Exception as e:
+            current_app.logger.warning(f'Ошибка отправки письма: {e}')
+            flash('Не удалось отправить письмо. Почта не настроена на сервере.', 'danger')
+            return render_template('auth/forgot_password.html')
 
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('auth.verify_reset_code'))
 
     return render_template('auth/forgot_password.html')
 
 
-@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
-def reset_password(token):
+@auth_bp.route('/verify-code', methods=['GET', 'POST'])
+def verify_reset_code():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
 
-    try:
-        email = _get_serializer().loads(token, salt='password-reset', max_age=3600)
-    except (SignatureExpired, BadSignature):
-        flash('Ссылка недействительна или истекла. Запроси новую.', 'danger')
-        return redirect(url_for('auth.forgot_password'))
-
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        flash('Пользователь не найден.', 'danger')
+    # Нет активного запроса — отправляем назад
+    if 'reset_code' not in session:
+        flash('Сначала введи email.', 'warning')
         return redirect(url_for('auth.forgot_password'))
 
     if request.method == 'POST':
-        password = request.form.get('password', '')
-        confirm = request.form.get('confirm_password', '')
+        entered_code = request.form.get('code', '').strip()
+        password     = request.form.get('password', '')
+        confirm      = request.form.get('confirm_password', '')
+
+        # Проверяем срок действия
+        expires = datetime.fromisoformat(session.get('reset_expires', '2000-01-01'))
+        if datetime.utcnow() > expires:
+            session.pop('reset_code', None)
+            flash('Код истёк. Запроси новый.', 'danger')
+            return redirect(url_for('auth.forgot_password'))
+
+        if entered_code != session.get('reset_code'):
+            flash('Неверный код. Попробуй ещё раз.', 'danger')
+            return render_template('auth/verify_reset_code.html')
 
         if len(password) < 6:
             flash('Пароль должен быть не менее 6 символов.', 'danger')
-            return render_template('auth/reset_password.html', token=token)
+            return render_template('auth/verify_reset_code.html')
 
         if password != confirm:
             flash('Пароли не совпадают.', 'danger')
-            return render_template('auth/reset_password.html', token=token)
+            return render_template('auth/verify_reset_code.html')
 
-        user.set_password(password)
-        db.session.commit()
-        flash('Пароль успешно изменён! Можешь войти.', 'success')
-        return redirect(url_for('auth.login'))
+        # Всё ок — меняем пароль
+        email = session.pop('reset_email', None)
+        session.pop('reset_code', None)
+        session.pop('reset_expires', None)
 
-    return render_template('auth/reset_password.html', token=token)
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.set_password(password)
+            db.session.commit()
+            flash('Пароль успешно изменён! Можешь войти.', 'success')
+            return redirect(url_for('auth.login'))
+
+        flash('Что-то пошло не так. Попробуй снова.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+
+    return render_template('auth/verify_reset_code.html')

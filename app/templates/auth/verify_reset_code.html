@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Введи код{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 col-lg-4">
+        <div class="auth-card p-4 p-md-5">
+            <h2 class="fw-bold mb-1 text-center">Введи код</h2>
+            <p class="text-muted text-center mb-4">
+                Мы отправили 6-значный код на твой email.<br>
+                <small>Не видишь? Проверь папку «Спам».</small>
+            </p>
+
+            <form method="post">
+                <div class="mb-4">
+                    <label class="form-label fw-semibold">Код из письма</label>
+                    <input type="text" name="code" class="form-control text-center fw-bold"
+                           style="font-size:1.5rem;letter-spacing:8px"
+                           maxlength="6" placeholder="______" required autofocus
+                           inputmode="numeric" autocomplete="one-time-code">
+                </div>
+
+                <hr class="border-secondary mb-4">
+                <p class="text-muted small mb-3">Придумай новый пароль:</p>
+
+                <div class="mb-3">
+                    <label class="form-label">Новый пароль</label>
+                    <input type="password" name="password" class="form-control"
+                           placeholder="Минимум 6 символов" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label">Повтори пароль</label>
+                    <input type="password" name="confirm_password" class="form-control"
+                           placeholder="Ещё раз" required>
+                </div>
+
+                <button type="submit" class="btn btn-violet w-100 py-2">
+                    Сохранить пароль
+                </button>
+            </form>
+
+            <hr class="my-4 border-secondary">
+            <p class="text-center text-muted mb-0 small">
+                Не получил письмо?
+                <a href="{{ url_for('auth.forgot_password') }}" class="link-violet">Отправить снова</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
