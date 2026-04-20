@@ -3,11 +3,13 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_socketio import SocketIO
+from flask_mail import Mail
 from config import Config
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 socketio = SocketIO(async_mode='gevent', cors_allowed_origins='*')
+mail = Mail()
 
 
 def create_app():
@@ -20,6 +22,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     socketio.init_app(app)
+    mail.init_app(app)
 
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Войдите в аккаунт для доступа к этой странице.'

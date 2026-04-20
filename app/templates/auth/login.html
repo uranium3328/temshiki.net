@@ -17,9 +17,14 @@
                     <label class="form-label">Пароль</label>
                     <input type="password" name="password" class="form-control" required>
                 </div>
-                <div class="mb-4 form-check">
-                    <input type="checkbox" class="form-check-input" id="remember" name="remember">
-                    <label class="form-check-label" for="remember">Запомнить меня</label>
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div class="form-check mb-0">
+                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <label class="form-check-label" for="remember">Запомнить меня</label>
+                    </div>
+                    <a href="{{ url_for('auth.forgot_password') }}" class="link-violet small">
+                        Забыл пароль?
+                    </a>
                 </div>
                 <button type="submit" class="btn btn-violet w-100 py-2">Войти</button>
             </form>
